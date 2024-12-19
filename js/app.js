@@ -4,6 +4,7 @@ class Particle {
         this.y = y;
         this.color = color;
         this.size = size;
+        // Mouvement aléatoire des particules
         this.velocityX = (Math.random() - 0.5) * 6;
         this.velocityY = (Math.random() - 0.5) * 6;
         this.alpha = 1;
@@ -23,7 +24,7 @@ class Particle {
     update() {
         this.x += this.velocityX;
         this.y += this.velocityY;
-        this.alpha -= 0.02;
+        this.alpha -= 0.02;  // Diminution progressive de l'alpha pour simuler la disparition des particules
     }
 }
 
@@ -34,7 +35,11 @@ class Firework {
         this.color = color;
         this.particles = [];
         this.exploded = false;
-        this.velocityY = Math.random() * 3 + 3;
+        
+        // Vitesse de montée réaliste mais rapide, entre 3 et 7 pixels par frame
+        this.velocityX = (Math.random() - 0.5) * 2;
+        this.velocityY = Math.random() * 4 + 4; // Plus rapide entre 4 et 8 pixels par frame
+        this.maxHeight = Math.random() * (canvas.height / 2) + canvas.height / 3;  // Hauteur aléatoire
     }
 
     draw(context) {
@@ -42,31 +47,36 @@ class Firework {
             context.save();
             context.fillStyle = this.color;
             context.beginPath();
-            context.arc(this.x, this.y, 3, 0, Math.PI * 2, false);
+            context.arc(this.x, this.y, 3, 0, Math.PI * 2, false); // Avant explosion
             context.closePath();
             context.fill();
             context.restore();
         } else {
+            // Dessiner les particules après l'explosion
             this.particles.forEach(particle => particle.draw(context));
         }
     }
 
     update() {
         if (!this.exploded) {
-            this.y -= this.velocityY;
-            if (this.y <= canvas.height / 2) {
-                this.explode();
+            // Le feu d'artifice monte avec une vitesse réaliste
+            this.x += this.velocityX;
+            this.y -= this.velocityY;  // Déplacement vers le haut
+            if (this.y <= this.maxHeight) {
+                this.explode();  // Explose quand il atteint la hauteur maximale
             }
         } else {
+            // Mettre à jour les particules après l'explosion
             this.particles.forEach(particle => particle.update());
-            this.particles = this.particles.filter(particle => particle.alpha > 0);
+            this.particles = this.particles.filter(particle => particle.alpha > 0);  // Garder uniquement les particules visibles
         }
     }
 
     explode() {
         this.exploded = true;
+        // Créer des particules dispersées après l'explosion
         for (let i = 0; i < 100; i++) {
-            this.particles.push(new Particle(this.x, this.y, this.color, Math.random() * 3 + 1));
+            this.particles.push(new Particle(this.x, this.y, this.color, Math.random() * 3 + 1));  // Taille aléatoire des particules
         }
     }
 }
@@ -94,23 +104,27 @@ canvas.height = window.innerHeight;
 let fireworks = [];
 let textIndex = 0;
 
+// Créer un feu d'artifice au centre du canvas avec une position et une couleur aléatoire
 function createRandomFirework() {
-    const x = Math.random() * canvas.width;
-    const y = canvas.height;
-    const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-    fireworks.push(new Firework(x, y, color));
+    const x = canvas.width / 2;  // Position initiale au centre
+    const y = canvas.height;    // Le feu d'artifice part du bas du canvas
+    const color = `hsl(${Math.random() * 360}, 100%, 50%)`; // Couleur aléatoire
+    fireworks.push(new Firework(x, y, color));  // Ajouter un feu d'artifice à la scène
 }
 
+// Animation du canvas
 function animate() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height);  // Effacer le canvas à chaque frame
     fireworks.forEach(firework => {
-        firework.draw(context);
-        firework.update();
+        firework.draw(context);  // Dessiner chaque feu d'artifice
+        firework.update();  // Mettre à jour leur position
     });
+    // Filtrer les feux d'artifice dont toutes les particules ont disparu
     fireworks = fireworks.filter(firework => firework.particles.length > 0 || !firework.exploded);
-    requestAnimationFrame(animate);
+    requestAnimationFrame(animate);  // Redemander l'animation pour la frame suivante
 }
 
+// Affichage du texte en séquence
 function showText() {
     if (textIndex < texts.length) {
         textContainer.style.opacity = 1;
@@ -118,85 +132,20 @@ function showText() {
         textIndex++;
         setTimeout(() => {
             textContainer.style.opacity = 0;
-            setTimeout(showText, 1000);
+            setTimeout(showText, 1000);  // Afficher chaque texte pendant 2 secondes puis attendre 1 seconde
         }, 2000);
     }
 }
 
-function drawMadagascarFlag() {
-    const flagWidth = 300;
-    const flagHeight = 200;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "white";
-    context.fillRect((canvas.width - flagWidth) / 2, (canvas.height - flagHeight) / 2, flagWidth / 3, flagHeight);
-    context.fillStyle = "red";
-    context.fillRect((canvas.width - flagWidth) / 2 + flagWidth / 3, (canvas.height - flagHeight) / 2, flagWidth * 2 / 3, flagHeight / 2);
-    context.fillStyle = "green";
-    context.fillRect((canvas.width - flagWidth) / 2 + flagWidth / 3, (canvas.height - flagHeight) / 2 + flagHeight / 2, flagWidth * 2 / 3, flagHeight / 2);
-}
-
-function drawMaki() {
-    const x = canvas.width / 2;
-    const y = canvas.height / 2;
-    const size = 100;
-
-    // Draw the body
-    context.fillStyle = "gray";
-    context.beginPath();
-    context.ellipse(x, y, size / 2, size * 0.75, 0, 0, Math.PI * 2);
-    context.fill();
-
-    // Draw the head
-    context.beginPath();
-    context.arc(x, y - size / 1.5, size / 2.5, 0, Math.PI * 2);
-    context.fill();
-
-    // Draw the eyes
-    context.fillStyle = "white";
-    context.beginPath();
-    context.arc(x - size / 8, y - size / 1.5, size / 10, 0, Math.PI * 2);
-    context.fill();
-    context.beginPath();
-    context.arc(x + size / 8, y - size / 1.5, size / 10, 0, Math.PI * 2);
-    context.fill();
-
-    // Draw the pupils
-    context.fillStyle = "black";
-    context.beginPath();
-    context.arc(x - size / 8, y - size / 1.5, size / 20, 0, Math.PI * 2);
-    context.fill();
-    context.beginPath();
-    context.arc(x + size / 8, y - size / 1.5, size / 20, 0, Math.PI * 2);
-    context.fill();
-
-    // Draw the nose
-    context.beginPath();
-    context.arc(x, y - size / 1.8, size / 15, 0, Math.PI * 2);
-    context.fill();
-
-    // Draw the tail
-    context.strokeStyle = "gray";
-    context.lineWidth = size / 10;
-    context.beginPath();
-    context.moveTo(x + size / 2, y);
-    context.quadraticCurveTo(x + size, y - size, x + size / 2, y - size * 1.5);
-    context.stroke();
-}
-
+// Initialisation et démarrage de l'animation
 function startAnimation() {
     setTimeout(() => {
-        drawMadagascarFlag();
-        setTimeout(() => {
-            drawMaki();
-            setTimeout(() => {
-                textContainer.style.opacity = 0;
-                showText();
-            }, 5000);
-        }, 5000);
-    }, 10000);
+        // Créer des feux d'artifice à des intervalles aléatoires
+        setInterval(createRandomFirework, Math.random() * 1500 + 500);  // Intervalle aléatoire entre 500ms et 2000ms
+        animate();  // Démarrer l'animation
+    }, 1000);
 
-    setInterval(createRandomFirework, 800);
-    animate();
+    showText();  // Afficher les textes
 }
 
 startAnimation();
